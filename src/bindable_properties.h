@@ -150,10 +150,10 @@ struct arguments_adapter {
 };
 
 template <typename T, typename BindingLambda, typename SetterLambda,
-          typename NotificationLambda>
+          typename NotifierLambda>
 struct property_binder {
     property_binder(BindingLambda binding_, SetterLambda setter_,
-                    NotificationLambda notifier_) :
+                    NotifierLambda notifier_) :
         binding{binding_}, setter{setter_}, notifier{notifier_}
     {
     }
@@ -187,7 +187,7 @@ struct property_binder {
 
     BindingLambda binding;
     arguments_adapter<SetterLambda> setter;
-    arguments_adapter<NotificationLambda> notifier;
+    arguments_adapter<NotifierLambda> notifier;
 };
 
 template <typename T, typename NotifierLambda>
@@ -287,7 +287,8 @@ class property : public property_base
     template <typename U, typename NotifierLambda>
     friend class details::property_setter;
 
-    template <typename U, typename BindingLambda, typename SetterLambda>
+    template <typename U, typename BindingLambda, typename SetterLambda,
+              typename NotifierLambda>
     friend class details::property_binder;
 
     template <typename U>
@@ -403,16 +404,16 @@ public:
     }
 
     template <typename BindingLambda, typename SetterLambda = details::nop,
-              typename NotificationLambda = details::nop>
+              typename NotifierLambda = details::nop>
     bool set_binding(BindingLambda binding_lambda,
                      SetterLambda setter_lambda = details::nop{},
-                     NotificationLambda notification_lambda = details::nop{})
+                     NotifierLambda notification_lambda = details::nop{})
     {
         if (!is_owner())
             return false;
 
         func = details::property_binder<T, BindingLambda, SetterLambda,
-                                        NotificationLambda>{
+                                        NotifierLambda>{
             binding_lambda, setter_lambda, notification_lambda};
 
         func(this, nullptr, details::call_type::initial_binding);
