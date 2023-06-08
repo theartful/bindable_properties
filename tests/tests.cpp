@@ -279,10 +279,16 @@ TEST(Tests, PythagorosExample)
     bp::property<int> y = 21;
 
     bp::property<double> hypotenuse;
+
+    bool notificationReceived = false;
     hypotenuse.set_binding([&] { return std::sqrt(x * x + y * y); },
                            [&](double value) {
                                y.request_change(
                                    std::sqrt(value * value - x * x));
+                           },
+                           [&](double value) {
+                               if (value == 101.0)
+                                   notificationReceived = true;
                            });
 
     EXPECT_EQ(hypotenuse.value(), 29.0);
@@ -292,4 +298,5 @@ TEST(Tests, PythagorosExample)
     EXPECT_EQ(x.value(), 20);
     EXPECT_EQ(y.value(), 99);
     EXPECT_EQ(hypotenuse.value(), 101.0);
+    EXPECT_TRUE(notificationReceived);
 }

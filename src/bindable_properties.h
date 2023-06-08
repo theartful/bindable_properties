@@ -149,10 +149,12 @@ struct arguments_adapter {
     Lambda lambda;
 };
 
-template <typename T, typename BindingLambda, typename SetterLambda>
+template <typename T, typename BindingLambda, typename SetterLambda,
+          typename NotificationLambda>
 struct property_binder {
-    property_binder(BindingLambda binding_, SetterLambda setter_) :
-        binding{binding_}, setter{setter_}
+    property_binder(BindingLambda binding_, SetterLambda setter_,
+                    NotificationLambda notifier_) :
+        binding{binding_}, setter{setter_}, notifier{notifier_}
     {
     }
 
@@ -174,6 +176,9 @@ struct property_binder {
             setter(*prop_casted, *static_cast<T*>(value));
             break;
         }
+        case call_type::notification:
+            notifier(*prop_casted, prop_casted->value());
+            break;
         default:
             // this should never happen
             break;
@@ -182,6 +187,7 @@ struct property_binder {
 
     BindingLambda binding;
     arguments_adapter<SetterLambda> setter;
+    arguments_adapter<NotificationLambda> notifier;
 };
 
 template <typename T, typename NotifierLambda>
@@ -396,14 +402,21 @@ public:
         return true;
     }
 
-    template <typename BindingLambda, typename SetterLambda = details::nop>
-    void set_binding(BindingLambda binding_lambda,
-                     SetterLambda setter_lambda = details::nop{})
+    template <typename BindingLambda, typename SetterLambda = details::nop,
+              typename NotificationLambda = details::nop>
+    bool set_binding(BindingLambda binding_lambda,
+                     SetterLambda setter_lambda = details::nop{},
+                     NotificationLambda notification_lambda = details::nop{})
     {
-        func = details::property_binder<T, BindingLambda, SetterLambda>{
-            binding_lambda, setter_lambda};
+        if (!is_owner())
+            return false;
+
+        func = details::property_binder<T, BindingLambda, SetterLambda,
+                                        NotificationLambda>{
+            binding_lambda, setter_lambda, notification_lambda};
 
         func(this, nullptr, details::call_type::initial_binding);
+        return true;
     }
 
 private:

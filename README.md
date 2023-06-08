@@ -104,6 +104,10 @@ hypotenuse.set_binding(
     [&](double value) {
         // Setter that calls request_change on the x property
         y.request_change(std::sqrt(value * value - x * x));
+    },
+    // notification lambda when the value changes
+    [](double value) {
+        std::cout << "hypotenuse changed to " << value << '\n';
     }
 );
 
@@ -114,6 +118,14 @@ assert(x.value() == 20);
 assert(y.value() == 99);
 assert(hypotenuse.value() == 101.0);
 ```
+
+### Gotcha
+
+On any given instance of a property, you can only call one of `set_setter`,
+`set_notifier`, or `set_binding`. A setter can be only set for the owner, and
+`set_binding` cannot be called on an already bound property (such as views).
+This is done because the property class only keeps track of one function to
+preserve memory.
 
 ## No Allocations
 
