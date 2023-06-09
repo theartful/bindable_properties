@@ -282,17 +282,17 @@ class property : public property_base
     using self = property<T>;
 
     template <typename U, typename NotifierLambda>
-    friend class details::property_notifier;
+    friend struct details::property_notifier;
 
     template <typename U, typename NotifierLambda>
-    friend class details::property_setter;
+    friend struct details::property_setter;
 
     template <typename U, typename BindingLambda, typename SetterLambda,
               typename NotifierLambda>
-    friend class details::property_binder;
+    friend struct details::property_binder;
 
     template <typename U>
-    friend class details::default_notifier;
+    friend struct details::default_notifier;
 
 public:
     using value_type = T;
@@ -357,17 +357,6 @@ public:
             details::register_property(const_cast<self*>(this));
         }
         return val;
-    }
-
-    void set(const_reference val)
-    {
-        if (!is_owner()) {
-            if (owner) {
-                owner_casted()->set_using_setter_as_owner(val);
-            }
-        } else {
-            set_directly_as_owner(val);
-        }
     }
 
     void request_change(const_reference val)

@@ -139,7 +139,7 @@ TYPED_TEST(Tests, BasicSetterAndNotifier)
     EXPECT_EQ(view.value(), value);
 }
 
-TYPED_TEST(Tests, OwnerCanActAsView)
+TYPED_TEST(Tests, OwnerCanHaveANotifierInsteadOfSetter)
 {
     TypeParam value = new_value<TypeParam>(123);
     bp::property<TypeParam> prop;
@@ -247,9 +247,11 @@ TYPED_TEST(Tests, MoveSemantics)
 {
     TypeParam value1 = new_value<TypeParam>(123);
     TypeParam value2 = new_value<TypeParam>(223);
-    TypeParam value3 = new_value<TypeParam>(223);
+    TypeParam value3 = new_value<TypeParam>(323);
 
     ASSERT_NE(value1, value2);
+    ASSERT_NE(value1, value3);
+    ASSERT_NE(value2, value3);
 
     bp::property<TypeParam> x = value1;
     bp::property<TypeParam> y = x;
@@ -273,23 +275,25 @@ TYPED_TEST(Tests, MoveSemantics)
     EXPECT_EQ(y.value(), value3);
 }
 
-TEST(Tests, PythagorosExample)
+TEST(Tests, PythagorasExample)
 {
     bp::property<int> x = 20;
     bp::property<int> y = 21;
 
     bp::property<double> hypotenuse;
 
-    bool notificationReceived = false;
-    hypotenuse.set_binding([&] { return std::sqrt(x * x + y * y); },
-                           [&](double value) {
-                               y.request_change(
-                                   std::sqrt(value * value - x * x));
-                           },
-                           [&](double value) {
-                               if (value == 101.0)
-                                   notificationReceived = true;
-                           });
+    int notificationsReceived = 0;
+    double receivedValues[2];
+
+    hypotenuse.set_binding(
+        [&] { return std::sqrt(x * x + y * y); },
+        [&](double value) {
+            y.request_change((int)std::sqrt(value * value - x * x));
+        },
+        [&](double value) {
+            receivedValues[notificationsReceived % 2] = value;
+            notificationsReceived++;
+        });
 
     EXPECT_EQ(hypotenuse.value(), 29.0);
 
@@ -298,5 +302,7 @@ TEST(Tests, PythagorosExample)
     EXPECT_EQ(x.value(), 20);
     EXPECT_EQ(y.value(), 99);
     EXPECT_EQ(hypotenuse.value(), 101.0);
-    EXPECT_TRUE(notificationReceived);
+    EXPECT_EQ(notificationsReceived, 2);
+    EXPECT_EQ(receivedValues[0], 29.0);
+    EXPECT_EQ(receivedValues[1], 101.0);
 }
