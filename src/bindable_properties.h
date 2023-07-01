@@ -55,23 +55,27 @@ enum class call_type {
 
 template <typename T>
 struct default_setter {
-    void operator()(property_base* prop, void* value, call_type)
+    void operator()(property_base* prop, void* value, call_type type)
     {
-        property<T>* prop_casted = static_cast<property<T>*>(prop);
-        T* value_casted = static_cast<T*>(value);
+        if (type == call_type::setter) {
+            property<T>* prop_casted = static_cast<property<T>*>(prop);
+            T* value_casted = static_cast<T*>(value);
 
-        *prop_casted = *value_casted;
+            *prop_casted = *value_casted;
+        }
     }
 };
 
 template <typename T>
 struct default_notifier {
-    void operator()(property_base* prop, void* value, call_type)
+    void operator()(property_base* prop, void* value, call_type type)
     {
-        property<T>* prop_casted = static_cast<property<T>*>(prop);
-        T* value_casted = static_cast<T*>(value);
+        if (type == call_type::initial_notification) {
+            property<T>* prop_casted = static_cast<property<T>*>(prop);
+            T* value_casted = static_cast<T*>(value);
 
-        prop_casted->val = *value_casted;
+            prop_casted->val = *value_casted;
+        }
     }
 };
 
@@ -163,12 +167,15 @@ struct property_binder {
         property<T>* prop_casted = static_cast<property<T>*>(prop);
 
         switch (type) {
-        case call_type::initial_binding:
+        case call_type::initial_binding: {
             set_currently_binding(true);
             set_current_prop(prop);
-            prop_casted->set_directly_as_owner(binding());
+            auto result = binding();
             set_currently_binding(false);
+
+            prop_casted->set_directly_as_owner(result);
             break;
+        }
         case call_type::binding:
             prop_casted->set_directly_as_owner(binding());
             break;
