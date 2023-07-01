@@ -414,16 +414,12 @@ private:
 
     void set_using_setter_as_owner(const_reference new_val)
     {
-        if (val != new_val) {
-            func(this, (void*)&new_val, details::call_type::setter);
-        }
+        func(this, (void*)&new_val, details::call_type::setter);
     }
     void set_directly_as_owner(const_reference new_val)
     {
-        if (val != new_val) {
-            val = new_val;
-            notify_all(&val);
-        }
+        val = new_val;
+        notify_all(&val);
     }
 
 private:
